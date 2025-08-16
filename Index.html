@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sistema de Citaciones Estudiantiles</title>
+  <style>
+    :root{ --accent:#0f766e; --ink:#111827; --muted:#6b7280; --paper:#ffffff; --bg:#f3f4f6; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+    header{padding:16px 20px;background:linear-gradient(180deg,#fff,#f9fafb);border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:10}
+    h1{margin:0;font-size:20px}
+    .wrap{display:grid;grid-template-columns:420px 1fr;gap:20px;padding:20px;align-items:start}
+    .card{background:var(--paper);border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+    .card h2{font-size:16px;margin:0 0 12px 0}
+    .card .content{padding:16px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    input[type="text"],input[type="date"],input[type="time"],textarea,input[type="number"]{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:10px;font:inherit}
+    textarea{min-height:92px;resize:vertical}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button{border:0;border-radius:12px;padding:10px 14px;font-weight:600;cursor:pointer}
+    .primary{background:var(--accent);color:#fff}
+    .ghost{background:#eef2ff;color:#1f2937}
+    .danger{background:#fee2e2;color:#991b1b}
+    .muted{background:#f3f4f6;color:#111827}
+
+    /* Hoja A4 en la vista previa */
+    .sheet{width:210mm;min-height:297mm;margin:0 auto;background:var(--paper);color:var(--ink);border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.06);padding:18mm;position:relative}
+    .header{display:flex;gap:14px;align-items:center;margin-bottom:10px}
+    .logo{width:64px;height:64px;border:1px solid #e5e7eb;border-radius:8px;display:grid;place-items:center;overflow:hidden;background:#fafafa}
+    .logo img{max-width:100%;max-height:100%;object-fit:contain}
+    .inst{flex:1}
+    .inst h3{margin:0;font-size:18px}
+    .inst small{color:var(--muted)}
+    .folio{font-weight:700;border:1px dashed #d1d5db;padding:4px 8px;border-radius:8px}
+    .title{margin:12px 0 10px 0;text-align:center;font-size:20px;letter-spacing:.08em}
+    .badge{display:inline-block;border:1px solid var(--ink);padding:2px 8px;border-radius:999px;font-weight:700}
+    .meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 4px}
+    .meta div{padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px}
+    .meta strong{font-size:12px;color:var(--muted);display:block}
+    .body{margin-top:10px;line-height:1.5;text-align:justify}
+    .block{margin:12px 0}
+    .signs{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:26px}
+    .sig{border-top:1px dashed #9ca3af;padding-top:6px;text-align:center}
+    .cut{margin:18px 0;border-top:2px dashed #d1d5db}
+    .watermark{position:absolute;inset:auto 10mm 10mm auto;color:#9ca3af;font-size:10px}
+
+    /* IMPRESIÓN: imprimir SOLO la hoja (#preview) y nada más */
+    @page{size:A4;margin:15mm}
+    @media print{
+      /* 1) Oculta TODO por defecto */
+      body * { visibility: hidden !important; }
+
+      /* 2) Muestra SOLO la hoja y su contenido */
+      #preview, #preview * { visibility: visible !important; }
+
+      /* 3) Quita adornos/espacios y coloca la hoja al tope de la página */
+      #preview{ position:absolute; left:0; top:0; width:100%; margin:0 !important; padding:0 !important; }
+      .sheet{ border:0 !important; box-shadow:none !important; margin:0 auto !important; padding:0 !important; page-break-inside:avoid; break-inside:avoid; }
+
+      /* 4) Evita cortes feos y páginas en blanco */
+      .sheet *{ page-break-inside:avoid; break-inside:avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header><h1>📄 Sistema de Citaciones Estudiantiles</h1></header>
+
+  <div class="wrap">
+    <!-- Panel de control -->
+    <section id="panel" class="card" aria-label="Configuración y datos">
+      <div class="content">
+        <h2>Datos de la citación</h2>
+        <div class="row">
+          <div><label>Institución</label><input id="inst" type="text" placeholder="Unidad Educativa ..."></div>
+          <div><label>Ciudad</label><input id="ciudad" type="text" placeholder="Esmeraldas"></div>
+        </div>
+        <div class="row">
+          <div><label>Fecha actual</label><input id="fechaActual" type="date"></div>
+          <div><label>Hora actual</label><input id="horaActual" type="time"></div>
+        </div>
+        <div class="row">
+          <div><label>Folio / N°</label><input id="folio" type="number" min="1" step="1" placeholder="1"></div>
+          <div style="display:flex;align-items:end;gap:8px">
+            <label>¿Duplicar para archivo? (2 copias)</label>
+            <input id="doble" type="checkbox" />
+          </div>
+        </div>
+        <hr style="border:0;border-top:1px solid #e5e7eb;margin:14px 0">
+        <div class="row">
+          <div><label>Estudiante (Apellidos y Nombres)</label><input id="estudiante" type="text" placeholder="Pérez Gómez, Ana Sofía"></div>
+          <div><label>Curso / Paralelo</label><input id="curso" type="text" placeholder="3ro BGU - B"></div>
+        </div>
+        <div class="row">
+          <div><label>Representante / Tutor</label><input id="tutor" type="text" placeholder="Juan Pérez (Padre)"></div>
+          <div><label>Contacto (opcional)</label><input id="contacto" type="text" placeholder="0999999999 / correo"></div>
+        </div>
+        <label>Motivo de la citación</label>
+        <textarea id="motivo" placeholder="Describa claramente el porqué de la citación..."></textarea>
+        <div class="row">
+          <div><label>Lugar de la reunión</label><input id="lugar" type="text" placeholder="DECE / Coordinación / Rectorado"></div>
+          <div><label>Fecha de la reunión</label><input id="fechaReunion" type="date"></div>
+        </div>
+        <div class="row">
+          <div><label>Hora de la reunión</label><input id="horaReunion" type="time"></div>
+          <div><label>Emisor (Docente / Inspector)</label><input id="emisor" type="text" placeholder="Lic. María Cedeño - Inspectoría"></div>
+        </div>
+        <div style="margin-top:10px"><label>Logo de la institución (opcional)</label><input id="logo" type="file" accept="image/*"></div>
+        <div class="actions">
+          <button class="muted" id="actualizar">Actualizar vista previa</button>
+          <button class="primary" id="imprimir">Imprimir</button>
+          <button class="ghost" id="nuevo">Nuevo folio</button>
+          <button class="danger" id="limpiar">Borrar datos guardados</button>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-top:8px">Consejo: se guardan automáticamente la institución, ciudad, lugar, emisor, último folio y el logo (en este navegador). Puede limpiar estos datos cuando guste.</p>
+      </div>
+    </section>
+
+    <!-- Vista previa -->
+    <section class="card preview-wrap" aria-label="Vista previa">
+      <div class="content">
+        <h2>Vista previa (A4)</h2>
+        <div id="preview" class="sheet" aria-label="Hoja A4"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Utilidades
+    const fmtFechaLarga = (iso)=>{ if(!iso) return ''; const d = new Date(iso+'T00:00:00'); return new Intl.DateTimeFormat('es-EC',{day:'2-digit',month:'long',year:'numeric'}).format(d); };
+    const fmtHora = (val)=> val ? val.slice(0,5) : '';
+    const $ = (id)=> document.getElementById(id);
+
+    const refs = {
+      inst: $("inst"), ciudad: $("ciudad"), fechaActual: $("fechaActual"), horaActual: $("horaActual"),
+      folio: $("folio"), doble: $("doble"), estudiante: $("estudiante"), curso: $("curso"), tutor: $("tutor"), contacto: $("contacto"),
+      motivo: $("motivo"), lugar: $("lugar"), fechaReunion: $("fechaReunion"), horaReunion: $("horaReunion"), emisor: $("emisor"), logo: $("logo"),
+      preview: $("preview"), actualizar: $("actualizar"), imprimir: $("imprimir"), nuevo: $("nuevo"), limpiar: $("limpiar")
+    };
+
+    // Estado persistente mínimo
+    const STATE_KEYS = ["inst","ciudad","lugar","emisor","folio","logoData"];
+    function loadState(){ try{ STATE_KEYS.forEach(k=>{ const v=localStorage.getItem('cit-'+k); if(v!==null){ if(k==='folio') refs.folio.value=v; else if(k==='logoData') setLogoPreview(v); else refs[k].value=v; } }); }catch{} }
+    function saveState(){ try{ localStorage.setItem('cit-inst', refs.inst.value.trim()); localStorage.setItem('cit-ciudad', refs.ciudad.value.trim()); localStorage.setItem('cit-lugar', refs.lugar.value.trim()); localStorage.setItem('cit-emisor', refs.emisor.value.trim()); localStorage.setItem('cit-folio', refs.folio.value.trim()); }catch{} }
+
+    // Logo
+    let logoData=null; function setLogoPreview(dataUrl){ logoData=dataUrl; if(dataUrl){ try{localStorage.setItem('cit-logoData', dataUrl)}catch{} render(); } }
+    refs.logo.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=> setLogoPreview(r.result); r.readAsDataURL(f); });
+
+    // Render
+    function renderOneCopy(data){
+      const {inst,ciudad,fechaActual,horaActual,folio,estudiante,curso,tutor,contacto,motivo,lugar,fechaReunion,horaReunion,emisor}=data;
+      return `
+      <div class="header">
+        <div class="logo">${logoData?`<img alt="logo" src="${logoData}">`:'<span style="font-size:10px;color:#9ca3af">LOGO</span>'}</div>
+        <div class="inst"><h3>${inst||'Unidad Educativa'}</h3><small>${ciudad?ciudad+' — ':''}${fmtFechaLarga(fechaActual)} ${horaActual?'— '+fmtHora(horaActual):''}</small></div>
+        <div class="folio">FOLIO: ${folio||'—'}</div>
+      </div>
+      <div class="title"><span class="badge">CITACIÓN</span></div>
+      <div class="meta"><div><strong>Estudiante</strong>${estudiante||'—'}</div><div><strong>Curso / Paralelo</strong>${curso||'—'}</div></div>
+      <div class="meta"><div><strong>Representante / Tutor</strong>${tutor||'—'}</div><div><strong>Contacto</strong>${contacto||'—'}</div></div>
+      <div class="body">
+        <div class="block">Por medio de la presente se convoca al(la) Sr./Sra. <b>${tutor||'________________'}</b>, representante del(la) estudiante <b>${estudiante||'________________'}</b> del curso <b>${curso||'____'}</b>, con el fin de tratar el siguiente asunto:</div>
+        <div class="block" style="border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;white-space:pre-wrap">${(motivo||'').trim()||'— Describa el motivo de la citación —'}</div>
+        <div class="block">La reunión tendrá lugar en <b>${lugar||'________________'}</b> el día <b>${fmtFechaLarga(fechaReunion)||'____'}</b> a las <b>${fmtHora(horaReunion)||'____'}</b>. Se solicita su puntual asistencia.</div>
+      </div>
+      <div class="signs">
+        <div class="sig">${emisor||'____________________________'}<br><small>Emisor (Docente / Inspector)</small></div>
+        <div class="sig">Recibí conforme: ____________________________<br><small>C.I.: __________________</small></div>
+      </div>
+      <div class="watermark">Generado con Sistema de Citaciones</div>`;
+    }
+
+    function render(){
+      const data={ inst:refs.inst.value.trim(), ciudad:refs.ciudad.value.trim(), fechaActual:refs.fechaActual.value, horaActual:refs.horaActual.value, folio:refs.folio.value, estudiante:refs.estudiante.value.trim(), curso:refs.curso.value.trim(), tutor:refs.tutor.value.trim(), contacto:refs.contacto.value.trim(), motivo:refs.motivo.value, lugar:refs.lugar.value.trim(), fechaReunion:refs.fechaReunion.value, horaReunion:refs.horaReunion.value, emisor:refs.emisor.value.trim() };
+      const one=renderOneCopy(data);
+      const html = (refs.doble && refs.doble.checked) ? one+"<div class='cut'></div>"+one : one;
+      refs.preview.innerHTML=html;
+      if(logoData){ refs.preview.querySelectorAll('.logo img').forEach(img=> img.src=logoData); }
+    }
+
+    // Eventos
+    ["input","change"].forEach(evt=>{ document.addEventListener(evt,(e)=>{ const t=e.target; if(!t) return; if([refs.inst,refs.ciudad,refs.lugar,refs.emisor,refs.folio].includes(t)) saveState(); if(t===refs.logo) return; render(); }); });
+
+    // Botones
+    refs.imprimir.addEventListener('click', (e)=>{
+      e.preventDefault();
+      saveState(); render();
+      // Pequeño 'tick' para asegurar que la vista previa está pintada antes de abrir el diálogo
+      requestAnimationFrame(()=> setTimeout(()=> window.print(), 80));
+    });
+    refs.actualizar.addEventListener('click',(e)=>{e.preventDefault(); render();});
+    refs.nuevo.addEventListener('click',(e)=>{ e.preventDefault(); refs.estudiante.value=''; refs.curso.value=''; refs.tutor.value=''; refs.contacto.value=''; refs.motivo.value=''; refs.fechaReunion.value=''; refs.horaReunion.value=''; render(); });
+    refs.limpiar.addEventListener('click',(e)=>{ e.preventDefault(); if(confirm('¿Borrar datos guardados (inst., ciudad, lugar, emisor, folio y logo)?')){ try{ STATE_KEYS.forEach(k=>localStorage.removeItem('cit-'+k)); }catch{} logoData=null; render(); } });
+
+    // Init
+    (function init(){ const now=new Date(); const yyyy=now.getFullYear(); const mm=String(now.getMonth()+1).padStart(2,'0'); const dd=String(now.getDate()).padStart(2,'0'); const hh=String(now.getHours()).padStart(2,'0'); const mi=String(now.getMinutes()).padStart(2,'0');
+      $("fechaActual").value=`${yyyy}-${mm}-${dd}`; $("horaActual").value=`${hh}:${mi}`; loadState(); render(); })();
+  </script>
+</body>
+</html>
